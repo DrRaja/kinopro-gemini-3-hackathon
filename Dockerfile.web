@@ -11,9 +11,10 @@ RUN npm config set registry https://registry.npmjs.org/ \
   && npm config set fetch-retry-factor 2 \
   && npm config set fetch-retry-mintimeout 20000 \
   && npm config set fetch-retry-maxtimeout 120000 \
+  && npm config set fetch-timeout 300000 \
   && npm config set fund false \
   && npm config set audit false \
-  && npm install --no-audit --no-fund --loglevel=info
+  && /bin/sh -c 'set -e; for i in 1 2 3 4; do npm install --no-audit --no-fund --loglevel=info && exit 0; echo "npm install failed (attempt $i), retrying..."; sleep 8; done; exit 1'
 
 COPY . .
 
