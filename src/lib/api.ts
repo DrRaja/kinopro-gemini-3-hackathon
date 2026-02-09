@@ -57,7 +57,19 @@ type ApiPosterGeneration = {
   source_candidates?: string[];
 };
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+const configuredApiBase = (import.meta.env.VITE_API_URL ?? '').trim();
+const browserHost =
+  typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:8000` : 'http://localhost:8000';
+const pageIsLocal =
+  typeof window !== 'undefined'
+    ? window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    : true;
+const configuredUsesLocalhost =
+  configuredApiBase.includes('localhost') || configuredApiBase.includes('127.0.0.1');
+
+// If the UI is opened on a remote host, ignore localhost API config to avoid browser-side ECONNREFUSED.
+const API_BASE =
+  configuredApiBase && (pageIsLocal || !configuredUsesLocalhost) ? configuredApiBase : browserHost;
 const AUTH_KEY = 'kinopro_auth';
 
 const storyboardPalette = [
