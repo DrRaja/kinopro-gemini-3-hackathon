@@ -1,0 +1,54 @@
+id: kinopro_storyboard_pipeline
+summary: "UploadThing -> Gemini -> FFmpeg -> Thumbnails -> DB -> SSE"
+inputs:
+  project_id:
+    type: string
+  asset_url:
+    type: string
+  filename:
+    type: string
+  duration:
+    type: string
+  fps:
+    type: number
+steps:
+  # UploadThing ingest is commented out for MVP.
+  # - id: ingest_uploadthing
+  #   run: scripts/ingest_uploadthing.ts
+  #   inputs:
+  #     project_id: ${project_id}
+  #     asset_url: ${asset_url}
+  #     filename: ${filename}
+  - id: ingest_local_storage
+    run: scripts/ingest_local_storage.ts
+    inputs:
+      project_id: ${project_id}
+      asset_path: ${asset_url}
+      filename: ${filename}
+  - id: gemini_storyboard
+    run: scripts/gemini_storyboard.ts
+    inputs:
+      project_id: ${project_id}
+      filename: ${filename}
+      duration: ${duration}
+  - id: ffmpeg_extract
+    run: scripts/ffmpeg_extract.ts
+    inputs:
+      project_id: ${project_id}
+      scenes: ${steps.gemini_storyboard.output.storyboards}
+  - id: thumbnails
+    run: scripts/thumbnails.ts
+    inputs:
+      project_id: ${project_id}
+      scenes: ${steps.ffmpeg_extract.output.scenes}
+      fps: ${fps}
+  - id: persist
+    run: scripts/persist.ts
+    inputs:
+      project_id: ${project_id}
+      payload: ${steps.thumbnails.output}
+  - id: sse_notify
+    run: scripts/sse_notify.ts
+    inputs:
+      project_id: ${project_id}
+      status: "ready"
